@@ -42,7 +42,37 @@ async function run() {
             res.send(result);
         });
 
+        app.put("/users/:email", async (req, res) => {
+            const email = req.params.email;
+            const status = req.body;
+            console.log(email, status);
+            const query = { email: email };
+            const option = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    name: status.name,
+                    institute: status.institute,
+                    department: status.department,
+                    batch: status.batch,
+                    profession: status.profession,
+                },
+            };
+            const result = await usersCollection.updateOne(query, updatedDoc, option);
+            res.send(result);
+        });
+
         // ----------------------------user post api--------------------------------
+
+        app.get("/posts", async (req, res) => {
+            const query = {};
+            const result = await postsCollection.find(query).toArray();
+            res.send(result);
+        });
+        app.get("/topposts", async (req, res) => {
+            const query = {};
+            const result = await postsCollection.find(query).limit(10).toArray();
+            res.send(result);
+        });
 
         app.post("/posts", async (req, res) => {
             const post = req.body;
@@ -52,7 +82,7 @@ async function run() {
 
         app.get("/posts/:email", async (req, res) => {
             const email = req.params.email;
-            const query = { email };
+            const query = { userEmail: email };
             const posts = await postsCollection.find(query).toArray();
             res.send(posts);
         });
