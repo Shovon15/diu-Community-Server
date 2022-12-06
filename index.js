@@ -25,6 +25,7 @@ async function run() {
     try {
         const usersCollection = client.db("DIU-Community").collection("users");
         const postsCollection = client.db("DIU-Community").collection("posts");
+        const commentsCollection = client.db("DIU-Community").collection("comments");
 
         app.get("/users/:email", async (req, res) => {
             const email = req.params.email;
@@ -45,13 +46,13 @@ async function run() {
         app.put("/users/:email", async (req, res) => {
             const email = req.params.email;
             const status = req.body;
-            console.log(email, status);
+            // console.log(email, status);
             const query = { email: email };
             const option = { upsert: true };
             const updatedDoc = {
                 $set: {
                     name: status.name,
-                    institute: status.institute,
+                    institution: status.institution,
                     department: status.department,
                     batch: status.batch,
                     profession: status.profession,
@@ -68,6 +69,14 @@ async function run() {
             const result = await postsCollection.find(query).toArray();
             res.send(result);
         });
+        app.get("/posts/:_id", async (req, res) => {
+            const id = req.params._id;
+            // console.log(id);
+            const filter = { _id: ObjectId(id) };
+            const result = await postsCollection.findOne(filter);
+            res.send(result);
+        });
+
         app.get("/topposts", async (req, res) => {
             const query = {};
             const result = await postsCollection.find(query).limit(10).toArray();
@@ -82,9 +91,42 @@ async function run() {
 
         app.get("/posts/:email", async (req, res) => {
             const email = req.params.email;
-            const query = { userEmail: email };
+            // const query = { postId: email };
+            // console.log(email);
             const posts = await postsCollection.find(query).toArray();
             res.send(posts);
+        });
+        // app.get("/posts/:email", async (req, res) => {
+        //     const email = req.params.email;
+        //     // const email = "user@gmail.com";
+        //     console.log(email);
+        //     // const query = { userEmail: email };
+        //     // const posts = await postsCollection.find(query).toArray();
+        //     // res.send(posts);
+        // });
+
+        // ------------------------user comments api------------------------------
+
+        app.get("/comments/:_id", async (req, res) => {
+            const id = req.params._id;
+            // console.log(id);
+            // const postId = {};
+            const filter = { postId: id };
+            const sort = { date: -1 };
+            const result = await commentsCollection.find(filter).sort(sort).toArray();
+            res.send(result);
+        });
+
+        app.get("/comments", async (req, res) => {
+            const filter = {};
+            const result = await commentsCollection.find(filter).toArray();
+            res.send(result);
+        });
+
+        app.post("/comments/", async (req, res) => {
+            const comments = req.body;
+            const result = await commentsCollection.insertOne(comments);
+            res.send(result);
         });
     } finally {
     }
