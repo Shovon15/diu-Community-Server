@@ -26,6 +26,7 @@ async function run() {
         const usersCollection = client.db("DIU-Community").collection("users");
         const postsCollection = client.db("DIU-Community").collection("posts");
         const commentsCollection = client.db("DIU-Community").collection("comments");
+        const likesCollection = client.db("DIU-Community").collection("likes");
 
         app.get("/users/:email", async (req, res) => {
             const email = req.params.email;
@@ -66,7 +67,8 @@ async function run() {
 
         app.get("/posts", async (req, res) => {
             const query = {};
-            const result = await postsCollection.find(query).toArray();
+            const sort = { date: -1 };
+            const result = await postsCollection.find(query).sort(sort).toArray();
             res.send(result);
         });
         app.get("/posts/:_id", async (req, res) => {
@@ -79,7 +81,8 @@ async function run() {
 
         app.get("/topposts", async (req, res) => {
             const query = {};
-            const result = await postsCollection.find(query).limit(10).toArray();
+            const sort = { date: -1 };
+            const result = await postsCollection.find(query).sort(sort).limit(6).toArray();
             res.send(result);
         });
 
@@ -89,21 +92,37 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/posts/:email", async (req, res) => {
+        app.get("/userPost/:email", async (req, res) => {
             const email = req.params.email;
-            // const query = { postId: email };
             // console.log(email);
+            const query = { userEmail: email };
             const posts = await postsCollection.find(query).toArray();
             res.send(posts);
         });
-        // app.get("/posts/:email", async (req, res) => {
-        //     const email = req.params.email;
-        //     // const email = "user@gmail.com";
-        //     console.log(email);
-        //     // const query = { userEmail: email };
-        //     // const posts = await postsCollection.find(query).toArray();
-        //     // res.send(posts);
-        // });
+
+        app.put("/updatePost/:_id", async (req, res) => {
+            const id = req.params._id;
+            const status = req.body;
+            // console.log(email, status);
+            const query = { _id: ObjectId(id) };
+            const option = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    categoryName: status.categoryName,
+                    description: status.description,
+                    date: status.date,
+                },
+            };
+            const result = await postsCollection.updateOne(query, updatedDoc, option);
+            res.send(result);
+        });
+
+        app.delete("/userpost/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await postsCollection.deleteOne(filter);
+            res.send(result);
+        });
 
         // ------------------------user comments api------------------------------
 
@@ -126,6 +145,30 @@ async function run() {
         app.post("/comments/", async (req, res) => {
             const comments = req.body;
             const result = await commentsCollection.insertOne(comments);
+            res.send(result);
+        });
+
+        // -----------------------user like--------------------------------
+
+        app.get("/likes/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { userEmail: email };
+            const result = await likesCollection.find(filter).toArray();
+            res.send(result);
+        });
+
+        app.post("/likes", async (req, res) => {
+            const likes = req.body;
+            const result = await likesCollection.insertOne(likes);
+            res.send(result);
+        });
+
+        app.delete("/likes/:email/:id", async (req, res) => {
+            const email = req.params.email;
+            const id = req.params.id;
+            // console.log(email, postId);
+            const filter = { userEmail: email, postId: id };
+            const result = await likesCollection.deleteOne(filter);
             res.send(result);
         });
     } finally {
